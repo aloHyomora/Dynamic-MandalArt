@@ -18,6 +18,9 @@ namespace com.example
         [PrimaryKey("id")]
         public int id { get; set; }
         
+        [Column("index")]
+        public int index { get; set; }
+        
         [Column("goal")]
         public string goal { get; set; }
 
@@ -90,18 +93,18 @@ namespace com.example
             {
                 DynamicMandalArt data = new DynamicMandalArt();
 
-                int id = 0;
+                int index = 0;
                 if (buttons[i].name.StartsWith("Button"))
                 {
                     string[] parts = buttons[i].name.Substring(7).Split('_');
 
                     if (parts.Length == 2 && int.TryParse(parts[0], out int row) && int.TryParse(parts[1], out int col))
                     {
-                        id = row * 10 + col;
+                        index = row * 10 + col;
                     }
                 }
 
-                data.id = id;
+                data.index = index;
                 data.goal = buttons[i].GetComponentInChildren<TextMeshProUGUI>().text.Replace(" ", "").Replace("\n", "");
 
                 Debug.Log($"id: {data.id}, goal: {data.goal}");
@@ -162,13 +165,12 @@ namespace com.example
                 // 데이터 없으면 데이터 생성함. (초기 1회)
                 if (resultModels.Count == 0)
                 {
-                    // await InsertInitialData();
+                    await InsertInitialData();
                 }
-                
-                
+
                 foreach (var entry in resultModels)
                 {
-                    Debug.Log($"ID: {entry.id}, Goal: {entry.goal}, Dates: {string.Join(", ", entry.activate_dates)}");
+                    Debug.Log($"Index: {entry.index}, Goal: {entry.goal}, Dates: {string.Join(", ", entry.activate_dates)}");
                 }
             }
             catch (Exception ex)

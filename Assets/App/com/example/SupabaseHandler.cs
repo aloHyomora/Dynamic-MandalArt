@@ -3,6 +3,7 @@ using Supabase;
 using UnityEngine;
 using Client = Supabase.Client;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using Postgrest.Attributes;
 using Postgrest.Models; // Postgrest.Models.BaseModels
 
@@ -11,21 +12,48 @@ namespace com.example
     [Table("DynamicMandalArt")]
     public class DynamicMandalArt : BaseModel  //
     {
-        [PrimaryKey("goal_id")]
-        public int goal_id { get; set; }
+        [PrimaryKey("id")]
+        public int id { get; set; }
         
-        // [Column("activate_dates")]
+        [Column("goal")]
+        public string goal { get; set; }
+
+        [Column("activate_dates")]
+        public List<string> activate_dates { get; set; }
+
+        public DynamicMandalArt()
+        {
+            activate_dates = new List<string>();
+        }
+
+        // 날짜 추가 메서드
+        public void AddData(string date)
+        {
+            if(!activate_dates.Contains(date))
+                activate_dates.Add(date);
+        }
         
+        // JSONB 데이터 변환 메서드 (supabase 저장용)
+        public string ToJson()
+        {
+            return JsonConvert.SerializeObject(this.activate_dates);
+        }
+        
+        // JSONB 데이터를 리스트로 변환 (supabase 로드용)
+        public static List<string> FromJson(string jsonData)
+        {
+            return JsonConvert.DeserializeObject<List<string>>(jsonData);
+        }
 
         public override bool Equals(object obj)
         {
             return obj is DynamicMandalArt productInstance &&
-                   goal_id == productInstance.goal_id;
+                   id == productInstance.id;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(goal_id);
+            return HashCode.Combine(id);
         }
 
     }
@@ -53,9 +81,15 @@ namespace com.example
 
             foreach (var product in resultModels)
             {
-                Debug.Log($"Id: {product.goal_id}, Dates: ");
+                Debug.Log($"Id: {product.id}, Dates: ");
             }
 
+        }
+
+
+        private async void SaveDataWithJsonb(string catego)
+        {
+            
         }
     }
 }

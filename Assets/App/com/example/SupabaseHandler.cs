@@ -3,9 +3,12 @@ using Supabase;
 using UnityEngine;
 using Client = Supabase.Client;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Postgrest.Attributes;
-using Postgrest.Models; // Postgrest.Models.BaseModels
+using Postgrest.Models;
+using TMPro;
+using UnityEngine.UI; // Postgrest.Models.BaseModels
 
 namespace com.example
 {
@@ -62,7 +65,7 @@ namespace com.example
     {
         public SupabaseSettings SupabaseSettings = null!;
         private Client client;
-
+        public GameObject mandalArtGrid;
         private async void Start()
         {
             var options = new SupabaseOptions
@@ -73,23 +76,126 @@ namespace com.example
             var supabase = new Supabase.Client(SupabaseSettings.SupabaseURL, SupabaseSettings.SupabaseAnonKey, options);
             await supabase.InitializeAsync();
             
-            var result = await supabase.From<DynamicMandalArt>().Get();
-            Debug.Log(result +" !");
-
-            List<DynamicMandalArt> resultModels = result.Models;
-            Debug.Log($"Product count: {resultModels.Count}");
-
-            foreach (var product in resultModels)
-            {
-                Debug.Log($"Id: {product.id}, Dates: ");
-            }
-
+            // 데이터 로드
+            await LoadData();
         }
 
-
-        private async void SaveDataWithJsonb(string catego)
+        private List<DynamicMandalArt> GetIdGoalUnity()
         {
-            
+            Button[] buttons = mandalArtGrid.GetComponentsInChildren<Button>();
+
+            List<DynamicMandalArt> initialData = new List<DynamicMandalArt>();
+
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                DynamicMandalArt data = new DynamicMandalArt();
+
+                int id = 0;
+                if (buttons[i].name.StartsWith("Button"))
+                {
+                    string[] parts = buttons[i].name.Substring(7).Split('_');
+
+                    if (parts.Length == 2 && int.TryParse(parts[0], out int row) && int.TryParse(parts[1], out int col))
+                    {
+                        id = row * 10 + col;
+                    }
+                }
+
+                data.id = id;
+                data.goal = buttons[i].GetComponentInChildren<TextMeshProUGUI>().text.Replace(" ", "").Replace("\n", "");
+
+                Debug.Log($"id: {data.id}, goal: {data.goal}");
+                initialData.Add(data);
+            }
+
+            return initialData;
+        }
+        private async void SaveDataWithJsonb(int id, string newDate)
+        {
+            try
+            {
+                var options = new SupabaseOptions
+                {
+                    AutoConnectRealtime = true
+                };
+
+                var supabase = new Supabase.Client(SupabaseSettings.SupabaseURL, SupabaseSettings.SupabaseAnonKey, options);
+                
+                // 특정 ID의 데이터 가져오기
+                var existingData = await supabase.From<DynamicMandalArt>().Where(x => x.id == id).Single();
+
+                if (existingData != null)
+                {
+                    // 날짜 추가
+                    existingData.AddData(newDate);
+                    
+                    // 데이터 업데이트
+                    await supabase.From<DynamicMandalArt>().Update(existingData);
+                    Debug.Log($"Updated DynamicMandalArt with ID: {id}, Added Date: {newDate}");
+                }
+                else
+                {
+                    Debug.LogWarning($"No DynamicMandalArt found with ID: {id}. Creating new entry.");
+
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error in SaveDataWithJsonb: {e.Message}");
+                throw;
+            }
+        }
+        
+        // 데이터 로드 메서드
+        private async Task LoadData()
+        {
+            try
+            {
+                var supabase = new Supabase.Client(SupabaseSettings.SupabaseURL, SupabaseSettings.SupabaseAnonKey, new SupabaseOptions { AutoConnectRealtime = true });
+
+                // 모든 데이터 가져오기
+                var result = await supabase.From<DynamicMandalArt>().Get();
+
+                List<DynamicMandalArt> resultModels = result.Models;
+                Debug.Log($"Loaded {resultModels.Count} entries from DynamicMandalArt table.");
+                
+                // 데이터 없으면 데이터 생성함. (초기 1회)
+                if (resultModels.Count == 0)
+                {
+                    // await InsertInitialData();
+                }
+                
+                
+                foreach (var entry in resultModels)
+                {
+                    Debug.Log($"ID: {entry.id}, Goal: {entry.goal}, Dates: {string.Join(", ", entry.activate_dates)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error in LoadData: {ex.Message}");
+            }
+        }
+        
+        private async Task InsertInitialData()
+        {
+            try
+            {
+                var supabase = new Supabase.Client(SupabaseSettings.SupabaseURL, SupabaseSettings.SupabaseAnonKey, new SupabaseOptions { AutoConnectRealtime = true });
+
+                // 초기 데이터 리스트
+                List<DynamicMandalArt> initialData = GetIdGoalUnity();
+
+                foreach (var data in initialData)
+                {
+                    await supabase.From<DynamicMandalArt>().Insert(data);
+                    Debug.Log($"Inserted Data: ID = {data.id}, Goal = {data.goal}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error inserting initial data: {ex.Message}");
+            }
         }
     }
 }

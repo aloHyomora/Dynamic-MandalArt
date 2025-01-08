@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using com.example;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -54,14 +55,45 @@ public class GridNavigation : MonoBehaviour
             // 버튼 포커스 상태에서 onClick 호출 방지
             if (EventSystem.current.currentSelectedGameObject != Buttons[selectedRow, selectedCol].gameObject)
             {
-                Debug.Log($"Button at ({selectedRow}, {selectedCol}) {Buttons[selectedRow, selectedCol].name} selected!");
+                int index = 0;
+                string[] parts = Buttons[selectedRow, selectedCol].name.Substring(7).Split('_');
+
+                if (parts.Length == 2 && int.TryParse(parts[0], out int row) && int.TryParse(parts[1], out int col))
+                {
+                    index = row * 10 + col;
+                }
+
+                // "2025-01-05" 형식으로 출력
+                DateTime now = DateTime.Now;
+                string date = now.ToString("yyyy-MM-dd");
+                Debug.Log(
+                    $"[Enter] Button at ({selectedRow}, {selectedCol}) {Buttons[selectedRow, selectedCol].name} selected!");
+                Debug.Log($"index: {index}, Date : {date}");
+                SupabaseHandler.Instance.SaveDataWithJsonb(index, date);
             }
         }
     }
 
     public void OnClickEvent(int row, int col, string buttonName)
     {
-        Debug.Log($"Button at ({row}, {col}) with name '{buttonName}' selected!");
+        if (EventSystem.current.currentSelectedGameObject != Buttons[selectedRow, selectedCol].gameObject)
+        {
+            // "2025-01-05" 형식으로 출력
+            DateTime now = DateTime.Now;
+            string date = now.ToString("yyyy-MM-dd");
+
+            int index=0;
+            string[] parts = buttonName.Substring(7).Split('_');
+
+            if (parts.Length == 2 && int.TryParse(parts[0], out int row1) && int.TryParse(parts[1], out int col1))
+            {
+                index = row1 * 10 + col1;
+            }
+            Debug.Log($"[Click] Button at ({row}, {col}) with name '{buttonName}");
+            Debug.Log($"index: {index}, Date : {date}");
+            SupabaseHandler.Instance.SaveDataWithJsonb(index, date);
+        }
+
         MoveSelection(row - selectedRow, col - selectedCol);
     }
 
@@ -77,10 +109,11 @@ public class GridNavigation : MonoBehaviour
         // 새로운 버튼 강조 표시
         HighlightButton(selectedRow, selectedCol);
     }
+
     private void HighlightButton(int row, int col)
     {
         var buttonImage = Buttons[row, col].GetComponent<Image>();
-        _originalColor = buttonImage.color; 
+        _originalColor = buttonImage.color;
         buttonImage.color = highlightColor; // 버튼 색상 강조
     }
 

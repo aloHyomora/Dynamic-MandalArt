@@ -66,11 +66,13 @@ namespace com.example
 
     public class SupabaseHandler : MonoBehaviour
     {
+        public static SupabaseHandler Instance;
         public SupabaseSettings SupabaseSettings = null!;
         private Client client;
         public GameObject mandalArtGrid;
         private async void Start()
         {
+            if (Instance == null) Instance = this;
             var options = new SupabaseOptions
             {
                 AutoConnectRealtime = true
@@ -83,7 +85,7 @@ namespace com.example
             await LoadData();
         }
 
-        private List<DynamicMandalArt> GetIdGoalUnity()
+        private List<DynamicMandalArt> GetIdGoalFromUnity()
         {
             Button[] buttons = mandalArtGrid.GetComponentsInChildren<Button>();
 
@@ -113,7 +115,7 @@ namespace com.example
 
             return initialData;
         }
-        private async void SaveDataWithJsonb(int id, string newDate)
+        public async void SaveDataWithJsonb(int index, string newDate)
         {
             try
             {
@@ -125,7 +127,7 @@ namespace com.example
                 var supabase = new Supabase.Client(SupabaseSettings.SupabaseURL, SupabaseSettings.SupabaseAnonKey, options);
                 
                 // 특정 ID의 데이터 가져오기
-                var existingData = await supabase.From<DynamicMandalArt>().Where(x => x.id == id).Single();
+                var existingData = await supabase.From<DynamicMandalArt>().Where(x => x.index == index).Single();
 
                 if (existingData != null)
                 {
@@ -134,11 +136,11 @@ namespace com.example
                     
                     // 데이터 업데이트
                     await supabase.From<DynamicMandalArt>().Update(existingData);
-                    Debug.Log($"Updated DynamicMandalArt with ID: {id}, Added Date: {newDate}");
+                    Debug.Log($"Updated DynamicMandalArt with ID: {index}, Added Date: {newDate}");
                 }
                 else
                 {
-                    Debug.LogWarning($"No DynamicMandalArt found with ID: {id}. Creating new entry.");
+                    Debug.LogWarning($"No DynamicMandalArt found with ID: {index}. Creating new entry.");
 
                 }
             }
@@ -186,7 +188,7 @@ namespace com.example
                 var supabase = new Supabase.Client(SupabaseSettings.SupabaseURL, SupabaseSettings.SupabaseAnonKey, new SupabaseOptions { AutoConnectRealtime = true });
 
                 // 초기 데이터 리스트
-                List<DynamicMandalArt> initialData = GetIdGoalUnity();
+                List<DynamicMandalArt> initialData = GetIdGoalFromUnity();
 
                 foreach (var data in initialData)
                 {

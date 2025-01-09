@@ -69,7 +69,9 @@ public class GridNavigation : MonoBehaviour
                 Debug.Log(
                     $"[Enter] Button at ({selectedRow}, {selectedCol}) {Buttons[selectedRow, selectedCol].name} selected!");
                 Debug.Log($"index: {index}, Date : {date}");
-                SupabaseHandler.Instance.SaveDataWithJsonb(index, date);
+                
+                if(SupabaseHandler.Instance != null)
+                    SupabaseHandler.Instance.SaveDataWithJsonb(index, date);
             }
         }
     }
@@ -91,7 +93,8 @@ public class GridNavigation : MonoBehaviour
             }
             Debug.Log($"[Click] Button at ({row}, {col}) with name '{buttonName}");
             Debug.Log($"index: {index}, Date : {date}");
-            SupabaseHandler.Instance.SaveDataWithJsonb(index, date);
+            if(SupabaseHandler.Instance != null)
+                SupabaseHandler.Instance.SaveDataWithJsonb(index, date);
         }
 
         MoveSelection(row - selectedRow, col - selectedCol);

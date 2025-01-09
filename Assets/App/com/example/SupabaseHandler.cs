@@ -67,12 +67,21 @@ namespace com.example
     public class SupabaseHandler : MonoBehaviour
     {
         public static SupabaseHandler Instance;
+        public bool useDBConnection = false;
         public SupabaseSettings SupabaseSettings = null!;
         private Client client;
         public GameObject mandalArtGrid;
         private async void Start()
         {
-            if (Instance == null) Instance = this;
+            if (Instance == null && useDBConnection)
+            {
+                Instance = this;
+            }
+            else
+            {
+                return;
+            }
+            
             var options = new SupabaseOptions
             {
                 AutoConnectRealtime = true
